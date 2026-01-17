@@ -5,9 +5,9 @@ class config:
     #Client
     API_ID = 26249286
     API_HASH = "4e3bf0b014fda4ac752e8f4ab854279b"
-    BOT_TOKEN = "8040764357:AAGAR8ojTQdABD8pdl3FuoeB1HiftdaLKEc"
+    BOT_TOKEN = "7978548850:AAHuPm3psGOjpWMoMjBqt-w1FgWkLyJvDW8"
     BOT_NAME = "test"
-    BOT_USERNAME = "yukixrobot"
+    BOT_USERNAME = "Raikaxbot"
     BOT_ID = 8040764357
     WORKERS = 30
     MAX_MESSAGE_CACHE_SIZE = 100
