@@ -325,7 +325,6 @@ if __name__ == "__main__":
 
         async def initialize_async_components():
 
-            await init_db()
             scheduler.start()
             
             # Schedule the antiflood cleanup task to run every 5 minutes
