@@ -2,22 +2,36 @@
 import os
 import importlib
 import asyncio
-import json
 from pyrogram import idle, filters , Client
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery , Message
-from Yumeko import app, log, telebot, BACKUP_FILE_JSON, ptb, scheduler
+from Yumeko import app, log, scheduler
 from config import config
 from Yumeko.helper.on_start import edit_restart_message, clear_downloads_folder, notify_startup
 from Yumeko.admin.roleassign import ensure_owner_is_hokage
 from Yumeko.helper.state import initialize_services
-from Yumeko.database import setup_indexes, db
-from Yumeko.admin.backup import restore_db
+from Yumeko.database import init_db
 from asyncio import sleep
 from Yumeko.decorator.save import save 
 from Yumeko.decorator.errors import error 
-
+import shutil
+from Yumeko.modules.antiflood import cleanup_flood_tracker
+import random
 MODULES = ["modules", "watchers", "admin", "decorator"]
 LOADED_MODULES = {}
+
+
+STICKER_FILE_ID = random.choices(config.START_STICKER_FILE_ID, weights=[1, 1])[0]
+
+def cleanup():
+    for root, dirs, _ in os.walk("."):
+        for dir_name in dirs:
+            if dir_name == "__pycache__":
+                pycache_path = os.path.join(root, dir_name)
+                try:
+                    shutil.rmtree(pycache_path)
+                except Exception as e:
+                    print(f"[bold yellow]Failed to delete {pycache_path}: {e}[/]")
+
 
 # Load modules and extract __module__ and __help__
 def load_modules_from_folder(folder_name):
@@ -59,6 +73,9 @@ def get_paginated_buttons(page=1, items_per_page=15):
         button_rows.append([
             InlineKeyboardButton("🗑️", callback_data="delete")
         ])
+        button_rows.append([
+            InlineKeyboardButton("Bᴀᴄᴋ", callback_data="st_back")
+        ])
     elif page == total_pages:  # Last page: Back and Close vertically
         button_rows.append([
             InlineKeyboardButton("⬅️", callback_data=f"area_{page - 1}")
@@ -66,11 +83,17 @@ def get_paginated_buttons(page=1, items_per_page=15):
         button_rows.append([
             InlineKeyboardButton("🗑️", callback_data="delete")
         ])
+        button_rows.append([
+            InlineKeyboardButton("Bᴀᴄᴋ", callback_data="st_back")
+        ])
     else:  # Other pages: Back, Close, Next horizontally
         button_rows.append([
             InlineKeyboardButton("⬅️", callback_data=f"area_{page - 1}"),
             InlineKeyboardButton("🗑️", callback_data="delete"),
-            InlineKeyboardButton("➡️", callback_data=f"area_{page + 1}")
+            InlineKeyboardButton("➡️", callback_data=f"area_{page + 1}"),
+        ])
+        button_rows.append([
+            InlineKeyboardButton("Bᴀᴄᴋ", callback_data="st_back")
         ])
 
     return InlineKeyboardMarkup(button_rows)
@@ -88,10 +111,57 @@ def get_main_menu_buttons():
             InlineKeyboardButton("👤 ᴏᴡɴᴇʀ", user_id=config.OWNER_ID)
         ],
         [
-            InlineKeyboardButton("🆘 ʜᴇʟᴘ 🆘", callback_data="yumeko_help")
+            InlineKeyboardButton("Cᴏᴍᴍᴀɴᴅs", callback_data="yumeko_help"),
         ]
     ]
     return InlineKeyboardMarkup(buttons)
+
+@app.on_callback_query(filters.regex("st_back"))
+@error
+async def start_lol(_, c : CallbackQuery):
+        
+    user_mention = c.from_user.mention(style="md")
+    bot_mention = app.me.mention(style="md")
+    await c.message.edit(
+        text = f"**𝖧𝖾𝗒, {𝗎𝗌𝖾𝗋_𝗆𝖾𝗇𝗍𝗂𝗈𝗇} 🧸**\n"
+        f"**𝖨 𝖺𝗆 {𝖻𝗈𝗍_𝗆𝖾𝗇𝗍𝗂𝗈𝗇} ♡ , 𝗒𝗈𝗎𝗋 𝗏𝖾𝗋𝗌𝖺𝗍𝗂𝗅𝖾 𝗆𝖺𝗇𝖺𝗀𝖾𝗆𝖾𝗇𝗍 𝖻𝗈𝗍, 𝖽𝖾𝗌𝗂𝗀𝗇𝖾𝖽 𝗍𝗈 𝗁𝖾𝗅𝗉 𝗒𝗈𝗎 𝗍𝖺𝗄𝖾 𝖼𝗈𝗇𝗍𝗋𝗈𝗅 𝗈𝖿 𝗒𝗈𝗎𝗋 𝗀𝗋𝗈𝗎𝗉𝗌 𝗐𝗂𝗍𝗁 𝖾𝖺𝗌𝖾 𝗎𝗌𝗂𝗇𝗀 𝗆𝗒 𝗉𝗈𝗐𝖾𝗋𝖿𝗎𝗅 𝗆𝗈𝖽𝗎𝗅𝖾𝗌 𝖺𝗇𝖽 𝖼𝗈𝗆𝗆𝖺𝗇𝖽𝗌!**\n\n"
+        f"[✨]({𝖼𝗈𝗇𝖿𝗂𝗀.𝖲𝖳𝖠𝖱𝖳_𝖨𝖬𝖦_𝖴𝖱𝖫}) **𝖶𝗁𝖺𝗍 𝖨 𝖢𝖺𝗇 𝖣𝗈:**\n"
+        f" • 𝖲𝖾𝖺𝗆𝗅𝖾𝗌𝗌 𝗆𝖺𝗇𝖺𝗀𝖾𝗆𝖾𝗇𝗍 𝗈𝖿 𝗒𝗈𝗎𝗋 𝗀𝗋𝗈𝗎𝗉𝗌\n"
+        f" • 𝖯𝗈𝗐𝖾𝗋𝖿𝗎𝗅 𝗆𝗈𝖽𝖾𝗋𝖺𝗍𝗂𝗈𝗇 𝗍𝗈𝗈𝗅𝗌\n"
+        f" • 𝖥𝗎𝗇 𝖺𝗇𝖽 𝖾𝗇𝗀𝖺𝗀𝗂𝗇𝗀 𝖿𝖾𝖺𝗍𝗎𝗋𝖾𝗌\n\n"
+        f"📚 **𝖭𝖾𝖾𝖽 𝖧𝖾𝗅𝗉?**\n"
+        f"𝖢𝗅𝗂𝖼𝗄 𝗍𝗁𝖾 𝖧𝖾𝗅𝗉 𝖻𝗎𝗍𝗍𝗈𝗇 𝖻𝖾𝗅𝗈𝗐 𝗍𝗈 𝗀𝖾𝗍 𝖺𝗅𝗅 𝗍𝗁𝖾 𝖽𝖾𝗍𝖺𝗂𝗅𝗌 𝖺𝖻𝗈𝗎𝗍 𝗆𝗒 𝗆𝗈𝖽𝗎𝗅𝖾𝗌 𝖺𝗇𝖽 𝖼𝗈𝗆𝗆𝖺𝗇𝖽𝗌.",
+        reply_markup=get_main_menu_buttons(),
+        invert_media = True
+    )
+
+
+@app.on_callback_query(filters.regex("source_code"))
+@error
+async def source_code(_, clb: CallbackQuery):
+    await clb.message.edit(
+        text=(
+            "✨ **Name:** Yumeko\n"
+            "👨‍💻 **Developer:** [Aadiii](tg://user?id=5630057244)\n\n"
+            "🤝 **Supporters:**\n"
+            "   • [Eren Yeager](tg://user?id=2033411815)\n"
+            "   • [ChatGPT](https://chatgpt.com)\n\n"
+            "🤖 **Bots Under This Repository:**\n"
+            "   • [Nezuko](https://t.me/NezukoProxBot)\n"
+            "   • [Frieren](https://t.me/FrierenzBot)\n"
+            "   • [Nobara](https://t.me/Nobara_Xprobot)\n"
+            "   • [Arlecchino](https://t.me/ArlecchinoProxBot)\n"
+            "   • [Kafka Honkai](https://t.me/Kafka_Xprobot)\n"
+            "   • [Mikasa](https://t.me/Mikasa_Xprobot)\n\n"           
+            "📂 **Source Code:** [Yumeko GitHub Repository](https://github.com/john-wick00/Yumekoo)"
+        ),
+        reply_markup=InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("Bᴀᴄᴋ", callback_data="st_back")
+            ]
+        ]),
+        disable_web_page_preview=True
+    )
 
 @app.on_message(filters.command("start" , config.COMMAND_PREFIXES) & filters.private)
 @error
@@ -103,17 +173,17 @@ async def start_cmd(_, message : Message):
         await help_command(Client, message)
         return
     
+    await message.react("🍓" , big = True)
+    
     x = await message.reply_text(f"`Hie {message.from_user.first_name} <3`")
     await sleep(0.3)
     await x.edit_text("🐾")
-    await sleep(0.8)
+    await sleep(0.6)
     await x.edit_text("❄️")
-    await sleep(0.8)
-    await x.edit_text("🕊️")
-    await sleep(0.8)
+    await sleep(0.6)
     await x.delete()
     
-    await message.reply_cached_media(file_id = "CAACAgUAAyEFAASjn0HcAAIMNWiIvW0jKBsAARjnIf_f1IYBRgQ0vQACJBcAAnzMIFdPkygrV28yfx4E")    
+    await message.reply_cached_media(file_id = STICKER_FILE_ID)    
     
     await sleep(0.2)
     
@@ -121,7 +191,7 @@ async def start_cmd(_, message : Message):
     bot_mention = app.me.mention(style="md")
     await message.reply(
         f"**𝖧𝖾𝗒, {𝗎𝗌𝖾𝗋_𝗆𝖾𝗇𝗍𝗂𝗈𝗇} 🧸**\n"
-        f"**𝖨 𝖺𝗆 {𝖻𝗈𝗍_𝗆𝖾𝗇𝗍𝗂𝗈𝗇} ♡ , 𝗒𝗈𝗎𝗋 𝗏𝖾𝗋𝗌𝖺𝗍𝗂𝗅𝖾 𝗆𝖺𝗇𝖺𝗀𝖾𝗆𝖾𝗇𝗍 𝖻𝗈𝗍, 𝖽𝖾𝗌𝗂𝗀𝗇𝖾𝖽 𝗍𝗈 𝗁𝖾𝗅𝗉 𝗒𝗈𝗎 𝗍𝖺𝗄𝖾 𝖼𝗈𝗇𝗍𝗋𝗈𝗅 𝗈𝖿 𝗒𝗈𝗎𝗋 𝗀𝗋𝗈𝗎𝗉𝗌 𝗐𝗂𝗍𝗁 𝖾𝖺𝗌𝖾 𝗎𝗌𝗂𝗇𝗀 𝗆𝗒 𝗉𝗈𝗐𝖾𝗋𝖿𝗎𝗅 𝗆𝗈𝖽𝗎𝗅𝖾𝗌 𝖺𝗇𝖽 𝖼𝗈𝗆𝗆𝖺𝗇𝖽𝗌!**\n\n"
+        f"**𝖨 𝖺𝗆 {𝖻𝗈𝗍_𝗆𝖾𝗇𝗍𝗂𝗈𝗇} , 𝗒𝗈𝗎𝗋 𝗏𝖾𝗋𝗌𝖺𝗍𝗂𝗅𝖾 𝗆𝖺𝗇𝖺𝗀𝖾𝗆𝖾𝗇𝗍 𝖻𝗈𝗍, 𝖽𝖾𝗌𝗂𝗀𝗇𝖾𝖽 𝗍𝗈 𝗁𝖾𝗅𝗉 𝗒𝗈𝗎 𝗍𝖺𝗄𝖾 𝖼𝗈𝗇𝗍𝗋𝗈𝗅 𝗈𝖿 𝗒𝗈𝗎𝗋 𝗀𝗋𝗈𝗎𝗉𝗌 𝗐𝗂𝗍𝗁 𝖾𝖺𝗌𝖾 𝗎𝗌𝗂𝗇𝗀 𝗆𝗒 𝗉𝗈𝗐𝖾𝗋𝖿𝗎𝗅 𝗆𝗈𝖽𝗎𝗅𝖾𝗌 𝖺𝗇𝖽 𝖼𝗈𝗆𝗆𝖺𝗇𝖽𝗌!**\n\n"
         f"[✨]({𝖼𝗈𝗇𝖿𝗂𝗀.𝖲𝖳𝖠𝖱𝖳_𝖨𝖬𝖦_𝖴𝖱𝖫}) **𝖶𝗁𝖺𝗍 𝖨 𝖢𝖺𝗇 𝖣𝗈:**\n"
         f" • 𝖲𝖾𝖺𝗆𝗅𝖾𝗌𝗌 𝗆𝖺𝗇𝖺𝗀𝖾𝗆𝖾𝗇𝗍 𝗈𝖿 𝗒𝗈𝗎𝗋 𝗀𝗋𝗈𝗎𝗉𝗌\n"
         f" • 𝖯𝗈𝗐𝖾𝗋𝖿𝗎𝗅 𝗆𝗈𝖽𝖾𝗋𝖺𝗍𝗂𝗈𝗇 𝗍𝗈𝗈𝗅𝗌\n"
@@ -129,7 +199,8 @@ async def start_cmd(_, message : Message):
         f"📚 **𝖭𝖾𝖾𝖽 𝖧𝖾𝗅𝗉?**\n"
         f"𝖢𝗅𝗂𝖼𝗄 𝗍𝗁𝖾 𝖧𝖾𝗅𝗉 𝖻𝗎𝗍𝗍𝗈𝗇 𝖻𝖾𝗅𝗈𝗐 𝗍𝗈 𝗀𝖾𝗍 𝖺𝗅𝗅 𝗍𝗁𝖾 𝖽𝖾𝗍𝖺𝗂𝗅𝗌 𝖺𝖻𝗈𝗎𝗍 𝗆𝗒 𝗆𝗈𝖽𝗎𝗅𝖾𝗌 𝖺𝗇𝖽 𝖼𝗈𝗆𝗆𝖺𝗇𝖽𝗌.",
         reply_markup=get_main_menu_buttons(),
-        invert_media = True
+        invert_media = True ,
+        message_effect_id= 5159385139981059251
     )
 
 
@@ -144,7 +215,8 @@ async def help_command(client, message: Message):
              f"🔹 **𝖠𝗏𝖺𝗂𝗅𝖺𝖻𝗅𝖾 𝖯𝗋𝖾𝖿𝗂𝗑𝖾𝗌:** {prefixes} \n\n"
              f"[📩]({config.HELP_IMG_URL}) **𝖥𝗈𝗎𝗇𝖽 𝖺 𝖻𝗎𝗀?**\n"
              f"𝖱𝖾𝗉𝗈𝗋𝗍 𝗂𝗍 𝗎𝗌𝗂𝗇𝗀 𝗍𝗁𝖾 /𝖻𝗎𝗀 𝖼𝗈𝗆𝗆𝖺𝗇𝖽, 𝖺𝗇𝖽 𝖨’𝗅𝗅 𝗀𝖾𝗍 𝗂𝗍 𝖿𝗂𝗑𝖾𝖽 𝖺𝗌 𝗌𝗈𝗈𝗇 𝖺𝗌 𝗉𝗈𝗌𝗌𝗂𝖻𝗅𝖾!",
-        reply_markup=get_paginated_buttons()
+        reply_markup=get_paginated_buttons(),
+        invert_media = True
     )
 
 @app.on_callback_query(filters.regex(r"^yumeko_help$"))
@@ -225,7 +297,7 @@ async def handle_main_menu_callback(client, query: CallbackQuery):
 @app.on_message(filters.command(["start" , "help"], prefixes=config.COMMAND_PREFIXES) & filters.group)
 async def start_command(client, message: Message):
     button = InlineKeyboardMarkup([
-        [InlineKeyboardButton("Sᴛᴀʀᴛ ɪɴ ᴘᴍ", url="https://t.me/Frierenzbot?start=help")]
+        [InlineKeyboardButton("Sᴛᴀʀᴛ ɪɴ ᴘᴍ", url="https://t.me/riselia_xbot?start=help")]
     ])
     await message.reply(
         text=f"**𝖧𝖾𝗅𝗅𝗈, {message.from_user.first_name} <3**\n"
@@ -234,37 +306,12 @@ async def start_command(client, message: Message):
     )
 
 
-async def is_database_empty():
-    collections = [db.users, db.afk_collection, db.rules_collection, db.announcement_collection]
-    for collection in collections:
-        if await collection.count_documents({}) > 0:
-            return False
-    return True
-
-def get_last_backup_file_id():
-    if os.path.exists(BACKUP_FILE_JSON):
-        with open(BACKUP_FILE_JSON, "r") as f:
-            data = json.load(f)
-            return data.get("file_id")
-    return None
-
-async def restore_from_last_backup():
-    file_id = get_last_backup_file_id()
-    if not file_id:
-        return "No backup file ID found. Please perform a backup first."
-
-    log.info(f"Restoring from backup file with ID: {file_id}")
-    file_path = await app.download_media(file_id)
-    response = restore_db(file_path)
-    os.remove(file_path)
-    return response
 
 if __name__ == "__main__":
     load_all_modules()
 
     try:
         app.start()
-        telebot.start(bot_token=config.BOT_TOKEN)
         initialize_services()
         ensure_owner_is_hokage()
         edit_restart_message()
@@ -274,26 +321,26 @@ if __name__ == "__main__":
         loop = asyncio.get_event_loop()
 
         async def initialize_async_components():
-            await setup_indexes()
-            if await is_database_empty():
-                log.warning("Database is empty. Attempting to restore from the last backup...")
-                # try :
-                #     restore_status = await restore_from_last_backup()
-                #     log.info(restore_status)
-                # except:
-                #     pass
-            else:
-                log.info("Database is not empty. Proceeding with startup.")
+
+            await init_db()
             scheduler.start()
+            
+            # Schedule the antiflood cleanup task to run every 5 minutes
+            scheduler.add_job(cleanup_flood_tracker, 'interval', minutes=5, id='antiflood_cleanup')
+            log.info("Scheduled antiflood cleanup task to run every 5 minutes")
+            
             log.info("Async components initialized.")
 
             bot_details = await app.get_me()
             log.info(f"Bot Configured: Name: {bot_details.first_name}, ID: {bot_details.id}, Username: @{bot_details.username}")
 
         loop.run_until_complete(initialize_async_components())
-        ptb.run_polling(timeout=15, drop_pending_updates=True)
         log.info("Bot started. Press Ctrl+C to stop.")
         idle()
+        
+        cleanup()
+    
+        app.stop()
 
     except Exception as e:
         log.exception(e)
