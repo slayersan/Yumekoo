@@ -31,6 +31,10 @@ class config:
     DOWNLOAD_LOCATION = "./downloads"
     COMMAND_PREFIXES = ["/" , "!" , "." , "#" , "$" , "%" , "&" , "?"] 
     CMD_STARTERS = "/.!&#%$"
+    START_STICKER_FILE_ID = [
+        "CAACAgUAAyEFAASjn0HcAAIKJ2iIUNOmfD5iFAj8_v3GTpvx49q-AAIwFAAC5qa4Vs2rp4A1Z5UFHgQ",
+        "CAACAgUAAyEFAASjn0HcAAIKDGiIRiZ2LXT6sjoBxPvyFYdPFTJgAAKpFgACfE9IVJy0EWc7L1VlHgQ",
+    ]
     STATS_IMG_URL = "https://files.catbox.moe/xfo8hk.jpg"
     START_IMG_URL = "https://files.catbox.moe/xfo8hk.jpg"
     HELP_IMG_URL = "https://files.catbox.moe/xfo8hk.jpg"
