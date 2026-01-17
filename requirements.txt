@@ -35,3 +35,4 @@ yt-dlp
 youtube-search
 youtube-search-python
 beautifulsoup4
+lyricsgenius==3.0.1
