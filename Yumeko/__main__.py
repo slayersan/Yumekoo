@@ -13,7 +13,6 @@ from config import config
 from Yumeko.helper.on_start import edit_restart_message, clear_downloads_folder, notify_startup
 from Yumeko.admin.roleassign import ensure_owner_is_hokage
 from Yumeko.helper.state import initialize_services
-from Yumeko.database import init_db
 from Yumeko.decorator.save import save
 from Yumeko.decorator.errors import error
 from pyrogram import Client
