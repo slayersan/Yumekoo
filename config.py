@@ -6,7 +6,7 @@ class config:
     API_ID = 26249286
     API_HASH = "4e3bf0b014fda4ac752e8f4ab854279b"
     BOT_TOKEN = "7978548850:AAHuPm3psGOjpWMoMjBqt-w1FgWkLyJvDW8"
-    BOT_NAME = "test"
+    BOT_NAME = "𝐑ᴀɪᴋᴀ 𝖝 𝐌ᴜsɪᴄ ᯤ̸ [ 𝐍ᴏ 𝐀ᴅs ]"
     BOT_USERNAME = "Raikaxbot"
     BOT_ID = 8040764357
     WORKERS = 30
@@ -21,8 +21,8 @@ class config:
 
     #Info
     BOT_VERSION = "x"
-    OWNER_ID = 6018803920
-    OWNER_USERNAME = "slayer1237"
+    OWNER_ID = 7804917014
+    OWNER_USERNAME = "SexyBcha"
     SUPPORT_CHAT = -1002745123292
     SUPPORT_CHAT_USERNAME = "RomanEmpire_Gateway"
     SUPPORT_CHAT_LINK = "https://t.me/RomanEmpire_Gateway"
